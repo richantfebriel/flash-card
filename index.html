@@ -1,0 +1,612 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Kartu Kata">
+<meta name="theme-color" content="#f6f4ef" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#16181d" media="(prefers-color-scheme: dark)">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-192.png">
+<title>Kartu Kata</title>
+<style>
+:root{
+  --bg:#f6f4ef; --panel:#ffffff; --ink:#1f2328; --muted:#6b7280; --line:#e5e1d8;
+  --accent:#2f6fed; --accent-ink:#fff; --good:#1f9d55; --bad:#d64545; --warn:#c98a12;
+  --card-back:#eef3ff; --shadow:0 6px 24px rgba(0,0,0,.08);
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#16181d; --panel:#1f232a; --ink:#e8eaed; --muted:#9aa3ad; --line:#2e333b;
+    --accent:#6b9bff; --accent-ink:#0d1220; --good:#3ecf7e; --bad:#ff6b6b; --warn:#f0b34a;
+    --card-back:#232b3b; --shadow:0 6px 24px rgba(0,0,0,.4);
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 -apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",sans-serif}
+.wrap{max-width:820px;margin:0 auto;padding:calc(20px + env(safe-area-inset-top)) calc(16px + env(safe-area-inset-right)) calc(60px + env(safe-area-inset-bottom)) calc(16px + env(safe-area-inset-left))}
+body{-webkit-tap-highlight-color:transparent}
+input,textarea,select{font-size:16px}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+h1{font-size:22px;margin:0;letter-spacing:-.01em}
+.stats{color:var(--muted);font-size:13px}
+nav{display:flex;gap:6px;background:var(--panel);border:1px solid var(--line);padding:4px;border-radius:12px;margin-bottom:18px}
+nav button{flex:1;border:0;background:transparent;color:var(--muted);padding:9px 10px;border-radius:9px;font:inherit;font-weight:600;cursor:pointer}
+nav button.on{background:var(--accent);color:var(--accent-ink)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:16px}
+label{display:block;font-size:13px;color:var(--muted);margin:0 0 4px;font-weight:600}
+input,textarea,select{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:9px 11px;outline:none}
+input:focus,textarea:focus,select:focus{border-color:var(--accent)}
+textarea{resize:vertical;min-height:44px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:560px){.row{grid-template-columns:1fr}}
+.field{margin-bottom:12px}
+.btn{border:1px solid var(--line);background:var(--panel);color:var(--ink);font:inherit;font-weight:600;padding:9px 14px;border-radius:9px;cursor:pointer}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.good{background:var(--good);border-color:var(--good);color:#fff}
+.btn.bad{background:var(--bad);border-color:var(--bad);color:#fff}
+.btn.small{padding:5px 9px;font-size:13px}
+.btns{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.hidden{display:none!important}
+.list{display:flex;flex-direction:column;gap:8px}
+.item{display:flex;gap:12px;align-items:flex-start;border:1px solid var(--line);border-radius:11px;padding:10px 12px;background:var(--panel)}
+.item .txt{flex:1;min-width:0}
+.item .w{font-weight:700;font-size:16px}
+.item .m{color:var(--ink)}
+.item .ex{color:var(--muted);font-size:13px;font-style:italic}
+.badge{display:inline-block;font-size:11px;font-weight:700;padding:1px 7px;border-radius:99px;background:var(--bg);border:1px solid var(--line);color:var(--muted);margin-left:6px;vertical-align:middle}
+.empty{color:var(--muted);text-align:center;padding:28px 10px}
+.toolbar{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.toolbar input{flex:1;min-width:160px}
+.toolbar select{width:auto}
+/* flashcard */
+.stage{perspective:1200px;margin:6px 0 16px}
+.flash{position:relative;height:280px;cursor:pointer;transform-style:preserve-3d;transition:transform .45s ease}
+.flash.flipped{transform:rotateY(180deg)}
+.face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:18px;border:1px solid var(--line);background:var(--panel);box-shadow:var(--shadow);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center}
+.face.back{transform:rotateY(180deg);background:var(--card-back)}
+.face .big{font-size:34px;font-weight:750;letter-spacing:-.01em;word-break:break-word}
+.face .sub{color:var(--muted);margin-top:10px;font-size:14px}
+.face .exs{margin-top:14px;font-style:italic;color:var(--muted);max-width:560px}
+.hint{color:var(--muted);font-size:12px;text-align:center;margin-top:8px}
+.speak{position:absolute;top:12px;right:12px}
+.progress{height:6px;background:var(--line);border-radius:99px;overflow:hidden;margin-bottom:12px}
+.progress>div{height:100%;background:var(--accent);width:0;transition:width .3s}
+/* quiz */
+.q-word{font-size:30px;font-weight:750;text-align:center;margin:10px 0 18px;word-break:break-word}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media (max-width:560px){.opts{grid-template-columns:1fr}}
+.opt{text-align:left;padding:14px;border-radius:11px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit;cursor:pointer}
+.opt:hover{border-color:var(--accent)}
+.opt.right{background:var(--good);border-color:var(--good);color:#fff}
+.opt.wrong{background:var(--bad);border-color:var(--bad);color:#fff}
+.feedback{text-align:center;font-weight:700;min-height:24px;margin-top:12px}
+.feedback.ok{color:var(--good)} .feedback.no{color:var(--bad)}
+.score{display:flex;gap:16px;justify-content:center;color:var(--muted);font-size:13px;margin-bottom:6px}
+.toast{white-space:nowrap;position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:9px 16px;border-radius:99px;font-weight:600;opacity:0;transition:opacity .25s;pointer-events:none}
+.toast.show{opacity:1}
+@media (hover:none){.kbdhint{display:none}}
+@media (max-width:560px){nav button{padding:9px 4px;font-size:14px;white-space:nowrap}h1{font-size:20px}.flash{height:300px}.face .big{font-size:30px}}
+kbd{font:12px ui-monospace,Menlo,monospace;border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:0 5px;background:var(--panel)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>📚 Kartu Kata</h1>
+    <div class="stats" id="stats"></div>
+  </header>
+
+  <nav>
+    <button data-tab="cards" class="on">Kartu</button>
+    <button data-tab="practice">Latihan</button>
+    <button data-tab="quiz">Kuis</button>
+    <button data-tab="settings">Data</button>
+  </nav>
+
+  <!-- KARTU -->
+  <section id="tab-cards">
+    <div class="panel">
+      <form id="addForm" autocomplete="off">
+        <div class="row">
+          <div class="field">
+            <label for="fWord">Kata / frasa Inggris</label>
+            <input id="fWord" required placeholder="contoh: grateful">
+          </div>
+          <div class="field">
+            <label for="fMeaning">Arti (Indonesia)</label>
+            <input id="fMeaning" required placeholder="contoh: bersyukur, berterima kasih">
+          </div>
+        </div>
+        <div class="field">
+          <label for="fExample">Contoh kalimat (opsional)</label>
+          <textarea id="fExample" rows="2" placeholder="contoh: I'm grateful for your help."></textarea>
+        </div>
+        <div class="btns">
+          <button class="btn primary" type="submit" id="saveBtn">+ Tambah kartu</button>
+          <button class="btn hidden" type="button" id="cancelEdit">Batal edit</button>
+          <span class="hint kbdhint" style="margin:0">Tekan <kbd>Enter</kbd> untuk simpan</span>
+        </div>
+      </form>
+    </div>
+
+    <div class="toolbar">
+      <input id="search" placeholder="Cari kata atau arti…">
+      <select id="sort">
+        <option value="new">Terbaru</option>
+        <option value="az">A → Z</option>
+        <option value="weak">Paling sering salah</option>
+      </select>
+    </div>
+    <div class="list" id="list"></div>
+  </section>
+
+  <!-- LATIHAN -->
+  <section id="tab-practice" class="hidden">
+    <div class="panel" id="practiceSetup">
+      <div class="row">
+        <div class="field">
+          <label>Kartu yang dilatih</label>
+          <select id="pSet">
+            <option value="due">Yang jatuh tempo hari ini</option>
+            <option value="all">Semua kartu (acak)</option>
+            <option value="weak">Yang sering salah</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Sisi depan</label>
+          <select id="pDir">
+            <option value="en">Inggris → Indonesia</option>
+            <option value="id">Indonesia → Inggris</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn primary" id="pStart">Mulai latihan</button>
+      <p class="hint" style="text-align:left">Kartu yang kamu jawab "Ingat" akan muncul lagi beberapa hari kemudian (makin sering ingat, makin jarang muncul). Kartu "Lupa" akan diulang lagi.</p>
+    </div>
+
+    <div id="practiceRun" class="hidden">
+      <div class="progress"><div id="pBar"></div></div>
+      <div class="score"><span id="pCount"></span></div>
+      <div class="stage">
+        <div class="flash" id="flash">
+          <div class="face front">
+            <button class="btn small speak" id="speakFront" title="Dengarkan">🔊</button>
+            <div class="big" id="fFront"></div>
+            <div class="sub">ketuk untuk balik kartu</div>
+          </div>
+          <div class="face back">
+            <button class="btn small speak" id="speakBack" title="Dengarkan">🔊</button>
+            <div class="big" id="fBack"></div>
+            <div class="exs" id="fEx"></div>
+          </div>
+        </div>
+      </div>
+      <div class="btns" style="justify-content:center">
+        <button class="btn bad" id="pForgot">✗ Lupa</button>
+        <button class="btn good" id="pKnew">✓ Ingat</button>
+        <button class="btn" id="pStop">Selesai</button>
+      </div>
+      <p class="hint kbdhint"><kbd>Spasi</kbd> balik kartu · <kbd>1</kbd> lupa · <kbd>2</kbd> ingat · <kbd>S</kbd> dengarkan</p>
+    </div>
+
+    <div id="practiceDone" class="panel hidden" style="text-align:center">
+      <div style="font-size:40px">🎉</div>
+      <h2 style="margin:6px 0">Latihan selesai!</h2>
+      <p id="pSummary" class="stats"></p>
+      <button class="btn primary" id="pAgain">Latihan lagi</button>
+    </div>
+  </section>
+
+  <!-- KUIS -->
+  <section id="tab-quiz" class="hidden">
+    <div class="panel" id="quizSetup">
+      <div class="row">
+        <div class="field">
+          <label>Jenis kuis</label>
+          <select id="qMode">
+            <option value="mc">Pilihan ganda</option>
+            <option value="type">Ketik jawaban</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Arah</label>
+          <select id="qDir">
+            <option value="en">Lihat Inggris, jawab arti</option>
+            <option value="id">Lihat arti, jawab Inggris</option>
+          </select>
+        </div>
+      </div>
+      <div class="field" style="max-width:200px">
+        <label>Jumlah soal</label>
+        <select id="qNum">
+          <option>10</option><option>20</option><option value="0">Semua</option>
+        </select>
+      </div>
+      <button class="btn primary" id="qStart">Mulai kuis</button>
+      <p class="hint" style="text-align:left">Pilihan ganda butuh minimal 4 kartu.</p>
+    </div>
+
+    <div id="quizRun" class="panel hidden">
+      <div class="progress"><div id="qBar"></div></div>
+      <div class="score"><span id="qPos"></span><span>✓ <b id="qRight">0</b></span><span>✗ <b id="qWrong">0</b></span></div>
+      <div class="q-word" id="qWord"></div>
+      <div class="opts" id="qOpts"></div>
+      <form id="qTypeForm" class="hidden" autocomplete="off">
+        <div class="btns">
+          <input id="qInput" placeholder="Ketik jawabanmu…" style="flex:1">
+          <button class="btn primary" type="submit">Cek</button>
+        </div>
+      </form>
+      <div class="feedback" id="qFb"></div>
+      <div class="btns" style="justify-content:center;margin-top:10px">
+        <button class="btn primary hidden" id="qNext">Lanjut →</button>
+        <button class="btn" id="qStop">Berhenti</button>
+      </div>
+    </div>
+
+    <div id="quizDone" class="panel hidden" style="text-align:center">
+      <div style="font-size:40px" id="qEmoji">🏆</div>
+      <h2 style="margin:6px 0" id="qFinal"></h2>
+      <div id="qMistakes" class="list" style="text-align:left;margin:14px 0"></div>
+      <button class="btn primary" id="qAgain">Kuis lagi</button>
+    </div>
+  </section>
+
+  <!-- DATA -->
+  <section id="tab-settings" class="hidden">
+    <div class="panel">
+      <h3 style="margin-top:0">Cadangan data</h3>
+      <p class="stats">Kartu tersimpan di browser ini. Simpan cadangan sesekali supaya aman kalau data browser terhapus, atau untuk pindah ke perangkat lain.</p>
+      <div class="btns">
+        <button class="btn primary" id="exportBtn">⬇︎ Simpan cadangan (.json)</button>
+        <label class="btn" style="margin:0;color:var(--ink)">⬆︎ Muat cadangan
+          <input type="file" id="importFile" accept=".json,application/json" class="hidden">
+        </label>
+      </div>
+    </div>
+    <div class="panel">
+      <h3 style="margin-top:0">Tambah banyak sekaligus</h3>
+      <p class="stats">Satu kartu per baris, format: <code>kata = arti</code> atau <code>kata = arti = contoh kalimat</code></p>
+      <textarea id="bulk" rows="6" placeholder="apple = apel&#10;brave = berani = She is a brave girl.&#10;look forward to = menantikan"></textarea>
+      <div class="btns" style="margin-top:10px">
+        <button class="btn primary" id="bulkBtn">Tambahkan</button>
+        <button class="btn" id="sampleBtn">Isi dengan 10 contoh kata</button>
+      </div>
+    </div>
+    <div class="panel">
+      <h3 style="margin-top:0">Suara</h3>
+      <div class="field" style="max-width:420px">
+        <label for="voiceSel">Suara pengucapan</label>
+        <select id="voiceSel"></select>
+      </div>
+      <button class="btn" id="testVoice">🔊 Coba suara</button>
+    </div>
+    <div class="panel">
+      <h3 style="margin-top:0;color:var(--bad)">Hapus semua</h3>
+      <button class="btn bad" id="wipeBtn">Hapus semua kartu</button>
+    </div>
+  </section>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+const KEY='kartukata.v1', VKEY='kartukata.voice';
+const DAY=86400000;
+const INTERVALS=[0,0,1,3,7,14,30]; // box 1..6 → days
+let cards=load();
+let editingId=null;
+
+function load(){try{return JSON.parse(localStorage.getItem(KEY))||[]}catch(e){return[]}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(cards))}catch(e){toast('Gagal menyimpan!')}render()}
+const $=id=>document.getElementById(id);
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const norm=s=>String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9 ]/g,' ').replace(/\s+/g,' ').trim();
+const isDue=c=>(c.due||0)<=Date.now();
+function toast(t){const el=$('toast');el.textContent=t;el.classList.add('show');clearTimeout(toast._t);toast._t=setTimeout(()=>el.classList.remove('show'),1800)}
+
+function newCard(word,meaning,example){return{id:uid(),word:word.trim(),meaning:meaning.trim(),example:(example||'').trim(),box:1,due:0,right:0,wrong:0,created:Date.now()}}
+function addCard(w,m,e){
+  if(!w.trim()||!m.trim())return false;
+  const dup=cards.find(c=>norm(c.word)===norm(w));
+  if(dup){toast(`"${w}" sudah ada`);return false}
+  cards.push(newCard(w,m,e));return true;
+}
+
+/* ---------- tabs ---------- */
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>showTab(b.dataset.tab));
+function showTab(t){
+  document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.tab===t));
+  ['cards','practice','quiz','settings'].forEach(x=>$('tab-'+x).classList.toggle('hidden',x!==t));
+  if(t==='practice'&&!practice.active)resetPractice();
+  if(t==='quiz'&&!quiz.active)resetQuiz();
+}
+
+/* ---------- cards tab ---------- */
+$('addForm').onsubmit=e=>{
+  e.preventDefault();
+  const w=$('fWord').value,m=$('fMeaning').value,x=$('fExample').value;
+  if(editingId){
+    const c=cards.find(c=>c.id===editingId);
+    if(c){c.word=w.trim();c.meaning=m.trim();c.example=x.trim()}
+    stopEdit();save();toast('Kartu diperbarui');
+  }else if(addCard(w,m,x)){
+    save();toast('Kartu ditambahkan');
+    $('addForm').reset();
+  }
+  $('fWord').focus();
+};
+$('fExample').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();$('addForm').requestSubmit()}});
+$('cancelEdit').onclick=()=>{stopEdit();$('addForm').reset()};
+function startEdit(id){
+  const c=cards.find(c=>c.id===id);if(!c)return;
+  editingId=id;$('fWord').value=c.word;$('fMeaning').value=c.meaning;$('fExample').value=c.example||'';
+  $('saveBtn').textContent='Simpan perubahan';$('cancelEdit').classList.remove('hidden');
+  window.scrollTo({top:0,behavior:'smooth'});$('fWord').focus();
+}
+function stopEdit(){editingId=null;$('saveBtn').textContent='+ Tambah kartu';$('cancelEdit').classList.add('hidden')}
+$('search').oninput=renderList;$('sort').onchange=renderList;
+
+function level(c){
+  if(c.right+c.wrong===0)return'baru';
+  if(c.box>=5)return'hafal';
+  if(c.box>=3)return'lumayan';
+  return'belajar';
+}
+function renderList(){
+  const q=norm($('search').value);
+  let arr=cards.filter(c=>!q||norm(c.word).includes(q)||norm(c.meaning).includes(q));
+  const s=$('sort').value;
+  if(s==='az')arr.sort((a,b)=>a.word.localeCompare(b.word));
+  else if(s==='weak')arr.sort((a,b)=>(b.wrong-b.right)-(a.wrong-a.right));
+  else arr.sort((a,b)=>b.created-a.created);
+  const el=$('list');
+  if(!cards.length){el.innerHTML='<div class="empty">Belum ada kartu. Tambahkan kata pertamamu di atas ✍️<br>atau buka tab <b>Data</b> untuk mengisi contoh.</div>';return}
+  if(!arr.length){el.innerHTML='<div class="empty">Tidak ada yang cocok.</div>';return}
+  el.innerHTML=arr.map(c=>`
+    <div class="item">
+      <div class="txt">
+        <div class="w">${esc(c.word)}<span class="badge">${level(c)}</span></div>
+        <div class="m">${esc(c.meaning)}</div>
+        ${c.example?`<div class="ex">${esc(c.example)}</div>`:''}
+      </div>
+      <div class="btns">
+        <button class="btn small" data-say="${c.id}" title="Dengarkan">🔊</button>
+        <button class="btn small" data-edit="${c.id}">Edit</button>
+        <button class="btn small" data-del="${c.id}">Hapus</button>
+      </div>
+    </div>`).join('');
+}
+$('list').onclick=e=>{
+  const b=e.target.closest('button');if(!b)return;
+  if(b.dataset.say){const c=cards.find(c=>c.id===b.dataset.say);c&&speak(c.word)}
+  if(b.dataset.edit)startEdit(b.dataset.edit);
+  if(b.dataset.del){const c=cards.find(c=>c.id===b.dataset.del);if(c&&confirm(`Hapus kartu "${c.word}"?`)){cards=cards.filter(x=>x.id!==c.id);save()}}
+};
+function renderStats(){
+  const due=cards.filter(isDue).length,mast=cards.filter(c=>c.box>=5).length;
+  $('stats').textContent=cards.length?`${cards.length} kartu · ${due} perlu diulang · ${mast} hafal`:'';
+}
+function render(){renderList();renderStats()}
+
+/* ---------- speech ---------- */
+let voices=[];
+function loadVoices(){
+  if(!('speechSynthesis'in window))return;
+  voices=speechSynthesis.getVoices().filter(v=>/^en[-_]/i.test(v.lang));
+  const saved=localGet(VKEY);
+  $('voiceSel').innerHTML=voices.map(v=>`<option value="${esc(v.name)}" ${v.name===saved?'selected':''}>${esc(v.name)} (${v.lang})</option>`).join('')||'<option>Tidak ada suara Inggris</option>';
+}
+function localGet(k){try{return localStorage.getItem(k)}catch(e){return null}}
+if('speechSynthesis'in window){loadVoices();speechSynthesis.onvoiceschanged=loadVoices}
+$('voiceSel').onchange=()=>{try{localStorage.setItem(VKEY,$('voiceSel').value)}catch(e){}};
+$('testVoice').onclick=()=>speak('Hello! Let\'s learn English together.');
+function speak(text){
+  if(!('speechSynthesis'in window))return toast('Suara tidak didukung');
+  speechSynthesis.cancel();
+  const u=new SpeechSynthesisUtterance(text);u.lang='en-US';u.rate=.9;
+  const v=voices.find(v=>v.name===$('voiceSel').value)||voices.find(v=>v.lang==='en-US');
+  if(v)u.voice=v;speechSynthesis.speak(u);
+}
+
+/* ---------- practice (flashcards + Leitner) ---------- */
+const practice={active:false,queue:[],idx:0,knew:0,forgot:0,dir:'en',total:0};
+function resetPractice(){
+  practice.active=false;
+  $('practiceSetup').classList.remove('hidden');$('practiceRun').classList.add('hidden');$('practiceDone').classList.add('hidden');
+  const due=cards.filter(isDue).length;
+  $('pSet').options[0].textContent=`Yang jatuh tempo hari ini (${due})`;
+}
+$('pStart').onclick=()=>{
+  const set=$('pSet').value;let pool;
+  if(set==='due')pool=shuffle(cards.filter(isDue));
+  else if(set==='weak')pool=cards.filter(c=>c.wrong>0).sort((a,b)=>(b.wrong-b.right)-(a.wrong-a.right)).slice(0,20);
+  else pool=shuffle(cards);
+  if(!cards.length)return toast('Tambah kartu dulu ya');
+  if(!pool.length)return toast(set==='due'?'Tidak ada yang jatuh tempo. Coba "Semua kartu".':'Belum ada kartu yang sering salah');
+  Object.assign(practice,{active:true,queue:pool.map(c=>c.id),idx:0,knew:0,forgot:0,dir:$('pDir').value,total:pool.length,seen:new Set()});
+  $('practiceSetup').classList.add('hidden');$('practiceRun').classList.remove('hidden');
+  showFlash();
+};
+function curCard(){return cards.find(c=>c.id===practice.queue[practice.idx])}
+function showFlash(){
+  const c=curCard();if(!c)return endPractice();
+  const f=$('flash');const wasFlipped=f.classList.contains('flipped');
+  f.classList.remove('flipped');
+  const en=practice.dir==='en';
+  $('fFront').textContent=en?c.word:c.meaning;
+  const setBack=()=>{$('fBack').textContent=en?c.meaning:c.word;$('fEx').textContent=c.example||''};
+  if(wasFlipped){$('fBack').textContent='';$('fEx').textContent='';setTimeout(setBack,450)}else setBack();
+  $('speakFront').classList.toggle('hidden',!en);
+  $('speakBack').classList.toggle('hidden',en);
+  const done=practice.seen.size;
+  $('pBar').style.width=(done/practice.total*100)+'%';
+  $('pCount').textContent=`Kartu ${Math.min(done+1,practice.total)} dari ${practice.total}${practice.queue.length-practice.idx>practice.total-done?' · ada ulangan':''}`;
+  if(en)speak(c.word);
+}
+$('flash').onclick=e=>{if(e.target.closest('.speak'))return;$('flash').classList.toggle('flipped')};
+$('speakFront').onclick=$('speakBack').onclick=()=>{const c=curCard();c&&speak(c.word)};
+function grade(knew){
+  const c=curCard();if(!c)return;
+  if(!$('flash').classList.contains('flipped')){$('flash').classList.add('flipped');return}
+  const first=!practice.seen.has(c.id);practice.seen.add(c.id);
+  if(knew){
+    if(first){c.box=Math.min(6,c.box+1);practice.knew++}
+    c.right++;c.due=Date.now()+INTERVALS[c.box]*DAY;
+  }else{
+    if(first)practice.forgot++;
+    c.wrong++;c.box=1;c.due=0;
+    practice.queue.push(c.id); // repeat at end
+  }
+  save();practice.idx++;
+  if(practice.idx>=practice.queue.length)endPractice();else showFlash();
+}
+$('pKnew').onclick=()=>grade(true);$('pForgot').onclick=()=>grade(false);
+$('pStop').onclick=endPractice;$('pAgain').onclick=resetPractice;
+function endPractice(){
+  practice.active=false;
+  $('practiceRun').classList.add('hidden');$('practiceDone').classList.remove('hidden');
+  $('pSummary').textContent=`Langsung ingat: ${practice.knew} · Perlu diulang: ${practice.forgot}`;
+}
+
+/* ---------- quiz ---------- */
+const quiz={active:false,items:[],i:0,right:0,wrong:0,mode:'mc',dir:'en',answered:false,mistakes:[]};
+function resetQuiz(){
+  quiz.active=false;
+  $('quizSetup').classList.remove('hidden');$('quizRun').classList.add('hidden');$('quizDone').classList.add('hidden');
+}
+$('qStart').onclick=()=>{
+  const mode=$('qMode').value;
+  if(!cards.length)return toast('Tambah kartu dulu ya');
+  if(mode==='mc'&&cards.length<4)return toast('Pilihan ganda butuh minimal 4 kartu');
+  const n=+$('qNum').value;let items=shuffle(cards);if(n)items=items.slice(0,n);
+  Object.assign(quiz,{active:true,items:items.map(c=>c.id),i:0,right:0,wrong:0,mode,dir:$('qDir').value,mistakes:[]});
+  $('quizSetup').classList.add('hidden');$('quizRun').classList.remove('hidden');
+  showQ();
+};
+const qAsk=c=>quiz.dir==='en'?c.word:c.meaning;
+const qAns=c=>quiz.dir==='en'?c.meaning:c.word;
+function showQ(){
+  const c=cards.find(x=>x.id===quiz.items[quiz.i]);if(!c)return endQuiz();
+  quiz.answered=false;
+  $('qWord').textContent=qAsk(c);
+  $('qPos').textContent=`Soal ${quiz.i+1}/${quiz.items.length}`;
+  $('qBar').style.width=(quiz.i/quiz.items.length*100)+'%';
+  $('qRight').textContent=quiz.right;$('qWrong').textContent=quiz.wrong;
+  $('qFb').textContent='';$('qFb').className='feedback';$('qNext').classList.add('hidden');
+  if(quiz.dir==='en')speak(c.word);
+  if(quiz.mode==='mc'){
+    $('qOpts').classList.remove('hidden');$('qTypeForm').classList.add('hidden');
+    const others=shuffle(cards.filter(x=>x.id!==c.id&&norm(qAns(x))!==norm(qAns(c)))).slice(0,3);
+    const opts=shuffle([c,...others]);
+    $('qOpts').innerHTML=opts.map(o=>`<button class="opt" data-id="${o.id}">${esc(qAns(o))}</button>`).join('');
+  }else{
+    $('qOpts').classList.add('hidden');$('qTypeForm').classList.remove('hidden');
+    $('qInput').value='';$('qInput').disabled=false;setTimeout(()=>$('qInput').focus(),30);
+  }
+}
+function markQ(ok,c,given){
+  quiz.answered=true;
+  if(ok){quiz.right++;c.right++;$('qFb').textContent='Benar! 🎯';$('qFb').className='feedback ok'}
+  else{quiz.wrong++;c.wrong++;quiz.mistakes.push({c,given});$('qFb').textContent='Jawaban: '+qAns(c);$('qFb').className='feedback no'}
+  $('qRight').textContent=quiz.right;$('qWrong').textContent=quiz.wrong;
+  save();
+  if(quiz.dir==='id')speak(c.word);
+  $('qNext').classList.remove('hidden');$('qNext').focus();
+}
+$('qOpts').onclick=e=>{
+  const b=e.target.closest('.opt');if(!b||quiz.answered)return;
+  const c=cards.find(x=>x.id===quiz.items[quiz.i]);
+  const ok=b.dataset.id===c.id;
+  $('qOpts').querySelectorAll('.opt').forEach(o=>{if(o.dataset.id===c.id)o.classList.add('right')});
+  if(!ok)b.classList.add('wrong');
+  markQ(ok,c,b.textContent);
+};
+function typedOk(given,answer){
+  const g=norm(given);if(!g)return false;
+  // accept any of the comma/slash/semicolon separated meanings
+  const parts=answer.split(/[,;\/]| atau | or /i).map(norm).filter(Boolean);
+  return parts.some(p=>p===g||(p.length>4&&lev(p,g)<=1));
+}
+function lev(a,b){const m=a.length,n=b.length;const d=Array.from({length:m+1},(_,i)=>[i,...Array(n).fill(0)]);for(let j=1;j<=n;j++)d[0][j]=j;for(let i=1;i<=m;i++)for(let j=1;j<=n;j++)d[i][j]=Math.min(d[i-1][j]+1,d[i][j-1]+1,d[i-1][j-1]+(a[i-1]===b[j-1]?0:1));return d[m][n]}
+$('qTypeForm').onsubmit=e=>{
+  e.preventDefault();
+  if(quiz.answered){nextQ();return}
+  const c=cards.find(x=>x.id===quiz.items[quiz.i]);
+  const g=$('qInput').value;if(!g.trim())return;
+  $('qInput').disabled=true;
+  markQ(typedOk(g,qAns(c)),c,g);
+};
+function nextQ(){quiz.i++;if(quiz.i>=quiz.items.length)endQuiz();else showQ()}
+$('qNext').onclick=nextQ;$('qStop').onclick=endQuiz;$('qAgain').onclick=resetQuiz;
+function endQuiz(){
+  quiz.active=false;
+  $('quizRun').classList.add('hidden');$('quizDone').classList.remove('hidden');
+  const tot=quiz.right+quiz.wrong,pct=tot?Math.round(quiz.right/tot*100):0;
+  $('qFinal').textContent=`Skor: ${quiz.right}/${tot} (${pct}%)`;
+  $('qEmoji').textContent=pct>=90?'🏆':pct>=70?'👏':pct>=50?'💪':'📖';
+  $('qMistakes').innerHTML=quiz.mistakes.length?'<div class="stats">Yang perlu dipelajari lagi:</div>'+quiz.mistakes.map(m=>`<div class="item"><div class="txt"><div class="w">${esc(m.c.word)}</div><div class="m">${esc(m.c.meaning)}</div></div></div>`).join(''):'';
+}
+
+/* ---------- keyboard ---------- */
+document.addEventListener('keydown',e=>{
+  if(practice.active&&!$('practiceRun').classList.contains('hidden')&&!/INPUT|TEXTAREA|SELECT/.test(e.target.tagName)){
+    if(e.code==='Space'){e.preventDefault();$('flash').classList.toggle('flipped')}
+    else if(e.key==='1')grade(false);
+    else if(e.key==='2')grade(true);
+    else if(e.key.toLowerCase()==='s'){const c=curCard();c&&speak(c.word)}
+  }else if(quiz.active&&quiz.answered&&e.key==='Enter'&&e.target.tagName!=='INPUT'){e.preventDefault();nextQ()}
+  else if(quiz.active&&quiz.mode==='mc'&&!quiz.answered&&/^[1-4]$/.test(e.key)){const b=$('qOpts').querySelectorAll('.opt')[+e.key-1];b&&b.click()}
+});
+
+/* ---------- data ---------- */
+$('exportBtn').onclick=()=>{
+  const blob=new Blob([JSON.stringify({app:'kartukata',version:1,exported:new Date().toISOString(),cards},null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download=`kartu-kata-${new Date().toISOString().slice(0,10)}.json`;a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+};
+$('importFile').onchange=async e=>{
+  const f=e.target.files[0];if(!f)return;
+  try{
+    const data=JSON.parse(await f.text());const arr=Array.isArray(data)?data:data.cards;
+    if(!Array.isArray(arr))throw 0;
+    let added=0,updated=0;
+    arr.forEach(x=>{
+      if(!x||!x.word||!x.meaning)return;
+      const ex=cards.find(c=>norm(c.word)===norm(x.word));
+      if(ex){Object.assign(ex,x,{id:ex.id});updated++}
+      else{cards.push(Object.assign(newCard(x.word,x.meaning,x.example),x,{id:x.id||uid()}));added++}
+    });
+    save();toast(`${added} ditambah, ${updated} diperbarui`);
+  }catch(err){toast('File cadangan tidak valid')}
+  e.target.value='';
+};
+$('bulkBtn').onclick=()=>{
+  let n=0;
+  $('bulk').value.split('\n').forEach(line=>{
+    const p=line.split(/\s*=\s*|\t/);if(p.length>=2&&addCard(p[0],p[1],p.slice(2).join(' = ')))n++;
+  });
+  save();toast(`${n} kartu ditambahkan`);if(n)$('bulk').value='';
+};
+$('sampleBtn').onclick=()=>{
+  const s=[["grateful","bersyukur, berterima kasih","I'm grateful for your help."],["however","namun, akan tetapi","It was raining. However, we still went out."],["look forward to","menantikan","I look forward to meeting you."],["achieve","mencapai, meraih","She worked hard to achieve her goals."],["borrow","meminjam","Can I borrow your pen?"],["reliable","dapat diandalkan","He is a reliable friend."],["improve","meningkatkan, memperbaiki","Practice every day to improve your English."],["figure out","memahami, mencari tahu","I can't figure out this problem."],["afraid","takut","Don't be afraid to make mistakes."],["schedule","jadwal","What is your schedule for tomorrow?"]];
+  let n=0;s.forEach(x=>{if(addCard(...x))n++});save();toast(`${n} contoh ditambahkan`);
+};
+$('wipeBtn').onclick=()=>{if(cards.length&&confirm(`Yakin hapus semua ${cards.length} kartu? Simpan cadangan dulu kalau perlu.`)){cards=[];save();toast('Semua kartu dihapus')}};
+
+render();
+if('serviceWorker'in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('sw.js').catch(()=>{});
+try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}
+})();
+</script>
+</body>
+</html>
