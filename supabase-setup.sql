@@ -17,6 +17,9 @@ create index if not exists cards_user_idx on public.cards(user_id);
 
 alter table public.cards enable row level security;
 
+-- izin untuk user yang login (perlu kalau "Automatically expose new tables" dimatikan)
+grant select, insert, update, delete on public.cards to authenticated;
+
 drop policy if exists "own cards select" on public.cards;
 drop policy if exists "own cards insert" on public.cards;
 drop policy if exists "own cards update" on public.cards;
